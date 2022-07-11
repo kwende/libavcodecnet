@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\libavcodec.recorder\libavcodec.recorder.vcxproj" />
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="c:\windows\system32\xcopy &quot;$(SolutionDir)Externals\libs\*.dll&quot; &quot;$(TargetDir)&quot; /E /I /H /Y /D" />
+  </Target>
+
+</Project>

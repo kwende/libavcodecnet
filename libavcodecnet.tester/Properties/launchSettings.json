@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "libavcodecnet.tester": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
