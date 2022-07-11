@@ -16,6 +16,35 @@ Recorder::Recorder(std::string fileName, int width, int height, int fps, int bit
     _frameCounter = 0; 
 }
 
+Recorder::~Recorder()
+{
+    if (_nativePointers != nullptr)
+    {
+        Close(); 
+
+        if (_nativePointers->videoFrame != nullptr) {
+            av_frame_free(&_nativePointers->videoFrame);
+        }
+        if (_nativePointers->cctx != nullptr) {
+            avcodec_free_context(&_nativePointers->cctx);
+        }
+        if (_nativePointers->ofctx != nullptr) {
+            avformat_free_context(_nativePointers->ofctx);
+        }
+        if (_nativePointers->swsctx != nullptr) {
+            sws_freeContext(_nativePointers->swsctx);
+        }
+        if (_nativePointers->scratchData != nullptr)
+        {
+            delete _nativePointers->scratchData; 
+        }
+
+        delete _nativePointers; 
+
+        _nativePointers = nullptr; 
+    }
+}
+
 void Recorder::Initialize()
 {
     _nativePointers->oformat = (AVOutputFormat*)av_guess_format(nullptr, "test.mp4", nullptr);
@@ -94,27 +123,30 @@ void Recorder::Initialize()
 
 void Recorder::Close()
 {
-    //DELAYED FRAMES
-    AVPacket pkt;
-    av_init_packet(&pkt);
-    pkt.data = NULL;
-    pkt.size = 0;
+    if (_nativePointers != nullptr)
+    {
+        //DELAYED FRAMES
+        AVPacket pkt;
+        av_init_packet(&pkt);
+        pkt.data = NULL;
+        pkt.size = 0;
 
-    for (;;) {
-        avcodec_send_frame(_nativePointers->cctx, NULL);
-        if (avcodec_receive_packet(_nativePointers->cctx, &pkt) == 0) {
-            av_interleaved_write_frame(_nativePointers->ofctx, &pkt);
-            av_packet_unref(&pkt);
+        for (;;) {
+            avcodec_send_frame(_nativePointers->cctx, NULL);
+            if (avcodec_receive_packet(_nativePointers->cctx, &pkt) == 0) {
+                av_interleaved_write_frame(_nativePointers->ofctx, &pkt);
+                av_packet_unref(&pkt);
+            }
+            else {
+                break;
+            }
         }
-        else {
-            break;
-        }
-    }
 
-    av_write_trailer(_nativePointers->ofctx);
-    if (!(_nativePointers->oformat->flags & AVFMT_NOFILE)) {
-        int err = avio_close(_nativePointers->ofctx->pb);
-        if (err < 0) {
+        av_write_trailer(_nativePointers->ofctx);
+        if (!(_nativePointers->oformat->flags & AVFMT_NOFILE)) {
+            int err = avio_close(_nativePointers->ofctx->pb);
+            if (err < 0) {
+            }
         }
     }
 }

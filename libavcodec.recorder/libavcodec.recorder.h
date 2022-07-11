@@ -28,12 +28,13 @@ namespace libavcodecnet {
 		uint8_t* scratchData = nullptr; 
 	};
 
-	public ref class Recorder
+	public ref class Recorder : IDisposable
 	{
 	public:
 		static Recorder^ Create(String^ filename, int width, int height, int fps, int bitrate);
 		void WriteFrame(array<Byte>^ frameData); 
-		void Close(); 
+		void Close();
+		~Recorder();
 	private:
 		Recorder(std::string fileName, int width, int height, int fps, int bitrate); 
 		void Initialize(); 
