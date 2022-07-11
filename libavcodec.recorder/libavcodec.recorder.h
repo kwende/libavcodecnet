@@ -2,9 +2,8 @@
 
 using namespace System;
 
-namespace libavcodecrecorder {
-	public ref class Class1
+namespace libavcodecnet {
+	public ref class recorder
 	{
-		// TODO: Add your methods for this class here.
 	};
 }
