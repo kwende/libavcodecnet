@@ -31,15 +31,17 @@ namespace libavcodecnet {
 	public ref class Recorder : IDisposable
 	{
 	public:
-		static Recorder^ Create(String^ filename, int width, int height, int fps, int bitrate);
+		static Recorder^ Create(String^ filename, int width, int height, float fps, int crf);
 		void WriteFrame(array<Byte>^ frameData); 
 		void Close();
 		~Recorder();
 	private:
-		Recorder(std::string fileName, int width, int height, int fps, int bitrate); 
+		Recorder(std::string fileName, int width, int height, float fps, int crf); 
 		void Initialize(); 
 
 		NativePointers* _nativePointers; 
-		int _width, _height, _fps, _bitrate, _frameCounter; 
+		float _fps; 
+		int _width, _height, _frameCounter, _crf;
+		bool _flushed = false; 
 	};
 }

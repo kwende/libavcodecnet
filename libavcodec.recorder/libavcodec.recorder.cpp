@@ -6,13 +6,15 @@ using namespace libavcodecnet;
 using namespace System::Runtime::InteropServices; 
 using namespace System; 
 
-Recorder::Recorder(std::string fileName, int width, int height, int fps, int bitrate)
+Recorder::Recorder(std::string fileName, int width, int height, float fps, int crf)
 {
 	_nativePointers = new NativePointers(); 
+    _nativePointers->fileName = new std::string(fileName); 
+
 	_width = width; 
 	_height = height; 
 	_fps = fps; 
-    _bitrate = bitrate; 
+    _crf = crf; 
     _frameCounter = 0; 
 }
 
@@ -38,6 +40,10 @@ Recorder::~Recorder()
         {
             delete _nativePointers->scratchData; 
         }
+        if (_nativePointers->fileName != nullptr)
+        {
+            delete _nativePointers->fileName; 
+        }
 
         delete _nativePointers; 
 
@@ -47,14 +53,14 @@ Recorder::~Recorder()
 
 void Recorder::Initialize()
 {
-    _nativePointers->oformat = (AVOutputFormat*)av_guess_format(nullptr, "test.mp4", nullptr);
+    _nativePointers->oformat = (AVOutputFormat*)av_guess_format(nullptr, _nativePointers->fileName->c_str(), nullptr);
     if (!_nativePointers->oformat)
     {
         return;
     }
     //oformat->video_codec = AV_CODEC_ID_H265;
 
-    int err = avformat_alloc_output_context2(&_nativePointers->ofctx, _nativePointers->oformat, nullptr, "test.mp4");
+    int err = avformat_alloc_output_context2(&_nativePointers->ofctx, _nativePointers->oformat, nullptr, _nativePointers->fileName->c_str());
     if (err)
     {
         return;
@@ -85,21 +91,28 @@ void Recorder::Initialize()
     stream->codecpar->width = _width;
     stream->codecpar->height = _height;
     stream->codecpar->format = AV_PIX_FMT_YUV420P;
-    stream->codecpar->bit_rate = _bitrate * 1000;
     avcodec_parameters_to_context(_nativePointers->cctx, stream->codecpar);
     _nativePointers->cctx->time_base.num = 1;
     _nativePointers->cctx->time_base.den = 1;
     _nativePointers->cctx->max_b_frames = 2;
     _nativePointers->cctx->gop_size = 12;
-    _nativePointers->cctx->framerate.den = _fps; 
-    _nativePointers->cctx->framerate.num = 1;
+    _nativePointers->cctx->framerate.den = 2; 
+    _nativePointers->cctx->framerate.num = _fps * 2;
 
+    //https://ffmpeg.org/pipermail/libav-user/2015-April/008027.html
+    //https://cpp.hotexamples.com/examples/-/-/av_opt_set/cpp-av_opt_set-function-examples.html`
+    if (av_opt_set_int(_nativePointers->cctx, "crf", _crf, AV_OPT_SEARCH_CHILDREN) > 0)
+    {
+        return; 
+    }
+
+    int optSetresult = 0;
     if (stream->codecpar->codec_id == AV_CODEC_ID_H264) {
-        av_opt_set(_nativePointers->cctx, "preset", "ultrafast", 0);
+        optSetresult = av_opt_set(_nativePointers->cctx, "preset", "ultrafast", 0);
     }
     else if (stream->codecpar->codec_id == AV_CODEC_ID_H265)
     {
-        av_opt_set(_nativePointers->cctx, "preset", "ultrafast", 0);
+        optSetresult = av_opt_set(_nativePointers->cctx, "preset", "ultrafast", 0);
     }
 
     avcodec_parameters_from_context(stream->codecpar, _nativePointers->cctx);
@@ -109,7 +122,7 @@ void Recorder::Initialize()
     }
 
     if (!(_nativePointers->oformat->flags & AVFMT_NOFILE)) {
-        if ((err = avio_open(&_nativePointers->ofctx->pb, "test.mp4", AVIO_FLAG_WRITE)) < 0) {
+        if ((err = avio_open(&_nativePointers->ofctx->pb, _nativePointers->fileName->c_str(), AVIO_FLAG_WRITE)) < 0) {
             return;
         }
     }
@@ -123,7 +136,7 @@ void Recorder::Initialize()
 
 void Recorder::Close()
 {
-    if (_nativePointers != nullptr)
+    if (_nativePointers != nullptr && !_flushed)
     {
         //DELAYED FRAMES
         AVPacket pkt;
@@ -148,6 +161,8 @@ void Recorder::Close()
             if (err < 0) {
             }
         }
+
+        _flushed = true; 
     }
 }
 
@@ -196,12 +211,12 @@ void Recorder::WriteFrame(array<Byte>^ frameData)
     }
 }
 
-Recorder^ Recorder::Create(String^ fileName, int width, int height, int fps, int bitrate)
+Recorder^ Recorder::Create(String^ fileName, int width, int height, float fps, int crf)
 {
 	marshal_context^ context = gcnew marshal_context();
 	const char* nativefileName = context->marshal_as<const char*>(fileName);
 
-	Recorder^ recorder = gcnew Recorder(std::string(nativefileName), width, height, fps, bitrate); 
+	Recorder^ recorder = gcnew Recorder(std::string(nativefileName), width, height, fps, crf);
 	recorder->Initialize(); 
 
 	delete context; 
