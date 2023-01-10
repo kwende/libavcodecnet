@@ -41,9 +41,9 @@
         {
             const int Width = 512, Height = 424;
 
-            using (Recorder recorder = Recorder.Create($"test.mp4", Width, Height, 15, 1))
+            using (Recorder16 recorder = Recorder16.Create($"test.mp4", Width, Height, 15, 1))
             {
-                byte[] frameBuffer = new byte[Width * Height * 3];
+                ushort[] frameBuffer = new ushort[Width * Height];
 
                 for (int c = 0; c < 1000; c++)
                 {
@@ -51,13 +51,12 @@
                     {
                         for (int x = 0; x < Height; x++, i++)
                         {
-                            frameBuffer[i * 3] = (byte)(y + x + c);
-                            frameBuffer[i * 3 + 1] = (byte)(y + x + c);
-                            frameBuffer[i * 3 + 2] = (byte)(y + x + c);
+                            frameBuffer[i] = (ushort)(y * x + c * 7000);
                         }
                     }
 
                     recorder.WriteFrame(frameBuffer);
+                    Console.Write(".");
                 }
             }
         }
