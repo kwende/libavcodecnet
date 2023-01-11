@@ -118,6 +118,32 @@ void Recorder16::WriteFrame(array<UInt16>^ frameData)
     int ret = sws_scale(this->_nativePointers->swsContext, (const uint8_t* const*)&ptr, inLinesize, 0, 
         _height, this->_nativePointers->avFrame->data, this->_nativePointers->avFrame->linesize);
 
+    //FILE* file; 
+    //fopen_s(&file, "c:/users/brush/desktop/binary.dat", "wb+"); 
+    ////size_t written = fwrite(this->_nativePointers->avFrame->data[0], sizeof(uint16_t), 512 * 424, file); 
+    //size_t written = fwrite(this->_nativePointers->avFrame->data[0], sizeof(uint16_t), 512 * 424, file);
+    //fclose(file); 
+
+    //FILE* file2;
+    //fopen_s(&file2, "c:/users/brush/desktop/binary_orig.dat", "wb+");
+    ////size_t written = fwrite(this->_nativePointers->avFrame->data[0], sizeof(uint16_t), 512 * 424, file); 
+    //written = fwrite(ptr, sizeof(uint16_t), 512 * 424, file2);
+    //fclose(file2);
+
+    //uint16_t* backFromOriginal = new uint16_t[512 * 424]; 
+
+    //auto swscontext2 = sws_getContext(_width, _height, DestFormat, _width, _height, AVPixelFormat::AV_PIX_FMT_GRAY16LE, SWS_BICUBIC, nullptr, nullptr, nullptr);
+
+    //ret = sws_scale(swscontext2, (const uint8_t* const*)this->_nativePointers->avFrame->data, this->_nativePointers->avFrame->linesize, 0,
+    //    _height, (uint8_t* const*)&backFromOriginal, inLinesize);
+
+
+    //FILE* file3;
+    //fopen_s(&file3, "c:/users/brush/desktop/binary_back.dat", "wb+");
+    ////size_t written = fwrite(this->_nativePointers->avFrame->data[0], sizeof(uint16_t), 512 * 424, file); 
+    //written = fwrite(backFromOriginal, sizeof(uint16_t), 512 * 424, file3);
+    //fclose(file3);
+
     this->_nativePointers->avFrame->pts = (1.0 / 25) * 90000 * (_frameCounter); // i think there's a bug here
 
     for (;;)
