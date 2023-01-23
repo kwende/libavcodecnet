@@ -37,7 +37,7 @@
             }
         }
 
-        static void Main(string[] args)
+        static void Recorer16()
         {
             const int Width = 512, Height = 424;
 
@@ -59,6 +59,18 @@
                     Console.Write(".");
                 }
             }
+        }
+
+        static void Main(string[] args)
+        {
+            ColorSpaceConverter cs = new ColorSpaceConverter();
+
+            byte[] data = File.ReadAllBytes("c:/users/brush/desktop/shit.dat");
+            ushort[] ushorts = new ushort[512 * 424];
+
+            Buffer.BlockCopy(data, 0, ushorts, 0, data.Length);
+
+            cs.Save16BitYChannelPNG(ushorts, 512, 424, "c:/users/brush/desktop/test.png");
         }
     }
 }
