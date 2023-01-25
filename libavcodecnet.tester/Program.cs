@@ -37,7 +37,7 @@
             }
         }
 
-        static void Recorer16()
+        static void Recorder2()
         {
             const int Width = 512, Height = 424;
 
@@ -63,14 +63,17 @@
 
         static void Main(string[] args)
         {
-            ColorSpaceConverter cs = new ColorSpaceConverter();
+            //https://stackoverflow.com/questions/66155414/convert-16bit-grayscale-png-to-hevc-x265
+            Recorder2();
 
-            byte[] data = File.ReadAllBytes("c:/users/brush/desktop/shit.dat");
-            ushort[] ushorts = new ushort[512 * 424];
+            //ColorSpaceConverter cs = new ColorSpaceConverter();
 
-            Buffer.BlockCopy(data, 0, ushorts, 0, data.Length);
+            //byte[] data = File.ReadAllBytes("c:/users/brush/desktop/shit.dat");
+            //ushort[] ushorts = new ushort[512 * 424];
 
-            cs.Save16BitYChannelPNG(ushorts, 512, 424, "c:/users/brush/desktop/test.png");
+            //Buffer.BlockCopy(data, 0, ushorts, 0, data.Length);
+
+            //cs.Save16BitYChannelPNG(ushorts, 512, 424, "c:/users/brush/desktop/test.png");
         }
     }
 }

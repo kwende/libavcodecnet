@@ -51,6 +51,8 @@ namespace libavcodecnet {
 		bool _flushed = false;
 
 		const AVPixelFormat DestFormat = AV_PIX_FMT_YUV420P12;
+		//const AVPixelFormat DestFormat = AV_PIX_FMT_GRAY12LE; 
+		//const AVPixelFormat DestFormat = AV_PIX_FMT_GRAY16LE;
 	};
 }
 

@@ -115,8 +115,10 @@ void Recorder16::WriteFrame(array<UInt16>^ frameData)
 
     int inLinesize[1] = { 2 * _width };
     const uint8_t* ptr = (uint8_t*)frameDataPtr;
-    int ret = sws_scale(this->_nativePointers->swsContext, (const uint8_t* const*)&ptr, inLinesize, 0, 
-        _height, this->_nativePointers->avFrame->data, this->_nativePointers->avFrame->linesize);
+    //int ret = sws_scale(this->_nativePointers->swsContext, (const uint8_t* const*)&ptr, inLinesize, 0, 
+    //    _height, this->_nativePointers->avFrame->data, this->_nativePointers->avFrame->linesize);
+    int ret = 0; 
+    CopyMemory(this->_nativePointers->avFrame->data[0], ptr, frameData->Length); 
 
     //FILE* file; 
     //fopen_s(&file, "c:/users/brush/desktop/binary.dat", "wb+"); 
@@ -215,6 +217,7 @@ Recorder16::~Recorder16()
 
 void Recorder16::Close()
 {
+    //https://stackoverflow.com/questions/66155414/convert-16bit-grayscale-png-to-hevc-x265
     if (_nativePointers != nullptr && !_flushed)
     {
         //DELAYED FRAMES
