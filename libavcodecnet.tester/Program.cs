@@ -64,7 +64,18 @@
         static void Main(string[] args)
         {
             //https://stackoverflow.com/questions/66155414/convert-16bit-grayscale-png-to-hevc-x265
-            Recorder2();
+            //Recorder2();
+
+            foreach (string file in Directory.GetFiles(@"C:\Users\brush\Desktop\png test"))
+            {
+                ColorSpaceConverter converter = new ColorSpaceConverter();
+
+                string destinationName = Path.Combine(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file) + "_converted.png");
+
+                converter.Convert16Bit2YChannelPNG(@"C:\Users\brush\Desktop\png test\0000001-6a9a80d9-53df-44eb-a751-d9241c14dcb2-1.png",
+                    512, 512,
+                    destinationName);
+            }
 
             //ColorSpaceConverter cs = new ColorSpaceConverter();
 

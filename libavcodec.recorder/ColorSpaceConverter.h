@@ -25,6 +25,7 @@ namespace libavcodecnet {
 	public:
 		ColorSpaceConverter();
 		void Save16BitYChannelPNG(array<UInt16>^ frameData, int width, int height, String^ destinationPath);
+		void Convert16Bit2YChannelPNG(String^ inputPath, int width, int height, String^ destinationPath);
 	};
 }
 
