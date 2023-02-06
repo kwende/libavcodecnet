@@ -39,11 +39,13 @@ namespace libavcodecnet {
 	public:
 		static Recorder16^ Create(String^ filename, int width, int height, int fps, int crf);
 		void WriteFrame(array<UInt16>^ frameData);
+		array<byte>^ WriteAndReturnFrame(array<UInt16>^ frameData); 
 		void Close();
 		~Recorder16();
 	private:
 		Recorder16(std::string fileName, int width, int height, int fps, int crf);
 		bool Initialize();
+		bool InitializeDecoder();
 
 		NativePointers16* _nativePointers;
 		int _fps;
@@ -53,6 +55,13 @@ namespace libavcodecnet {
 		const AVPixelFormat DestFormat = AV_PIX_FMT_YUV420P12;
 		//const AVPixelFormat DestFormat = AV_PIX_FMT_GRAY12LE; 
 		//const AVPixelFormat DestFormat = AV_PIX_FMT_GRAY16LE;
+
+		////// decoder shit
+		const AVCodec* _decoder; 
+		AVCodecContext* _decoderContext; 
+
+		const AVCodec* _pngEncoder; 
+		AVCodecContext* _pngEncoderContext; 
 	};
 }
 

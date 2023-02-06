@@ -22,17 +22,41 @@ Recorder16^ Recorder16::Create(String^ filename, int width, int height, int fps,
 
 	Recorder16^ recorder = gcnew Recorder16(std::string(nativefileName), width, height, fps, crf);
 	recorder->Initialize();
+    recorder->InitializeDecoder(); 
 
 	delete context;
 	return recorder;
 }
 
+bool Recorder16::InitializeDecoder()
+{
+    _decoder = avcodec_find_decoder(AV_CODEC_ID_HEVC); 
+    _decoderContext = avcodec_alloc_context3(_decoder); 
+    int ret = avcodec_open2(_decoderContext, _decoder, nullptr);
+
+    _pngEncoder = avcodec_find_encoder(AV_CODEC_ID_PNG); 
+    _pngEncoderContext = avcodec_alloc_context3(_pngEncoder); 
+
+    _pngEncoderContext->width = _width;
+    _pngEncoderContext->height = _height;
+    _pngEncoderContext->pix_fmt = AVPixelFormat::AV_PIX_FMT_GRAY16BE; // AVPixelFormat::AV_PIX_FMT_RGBA;
+    _pngEncoderContext->codec_type = AVMEDIA_TYPE_VIDEO;
+    _pngEncoderContext->time_base.num = 1;
+    _pngEncoderContext->time_base.den = 25;
+
+    ret = avcodec_open2(_pngEncoderContext, _pngEncoder, nullptr); 
+
+    return false; 
+}
+
 bool Recorder16::Initialize()
 {
+    printf("GOOGLIEBAH 5\n"); 
+
     const AVCodec* codec = avcodec_find_encoder(AV_CODEC_ID_HEVC);
     this->_nativePointers->codecCtx = avcodec_alloc_context3(codec);
-    this->_nativePointers->codecCtx->time_base = { 1, _fps };
-    this->_nativePointers->codecCtx->framerate = { _fps, 1 };
+    this->_nativePointers->codecCtx->time_base = { 10, 75 };
+    this->_nativePointers->codecCtx->framerate = { 75, 10 };
     this->_nativePointers->codecCtx->codec = codec;
     this->_nativePointers->codecCtx->codec_type = AVMEDIA_TYPE_VIDEO;
     this->_nativePointers->codecCtx->codec_id = codec->id;
@@ -47,17 +71,21 @@ bool Recorder16::Initialize()
 
     //this->_nativePointers->codecCtx->qmin = 10;
     //this->_nativePointers->codecCtx->qmax = 51;
-    if (codec->id == AV_CODEC_ID_HEVC) {
+    //if (codec->id == AV_CODEC_ID_HEVC) {
 
 
-        int ret = av_opt_set(this->_nativePointers->codecCtx->priv_data, "x265-params", "lossless", 1);
-        printf("%d\n", ret); 
-        //av_opt_set(this->_nativePointers->codecCtx->priv_data, "preset", "medium", 0);
-        //av_opt_set(this->_nativePointers->codecCtx->priv_data, "tune", "zero-latency", 0);
-    }
+    //    int ret = av_opt_set(this->_nativePointers->codecCtx->priv_data, "x265-params", "lossless", 1);
+    //    printf("%d\n", ret); 
+    //    //av_opt_set(this->_nativePointers->codecCtx->priv_data, "preset", "medium", 0);
+    //    //av_opt_set(this->_nativePointers->codecCtx->priv_data, "tune", "zero-latency", 0);
+    //}
 
     AVDictionary* av_dict_opts = nullptr;
-    av_dict_set(&av_dict_opts, "x265-params", "lossless=1:log-level=4", AV_DICT_MATCH_CASE);
+    //av_dict_set(&av_dict_opts, "x265-params", "lossless=1:log-level=4", AV_DICT_MATCH_CASE);
+    if (av_opt_set_int(_nativePointers->codecCtx, "crf", _crf, AV_OPT_SEARCH_CHILDREN) > 0)
+    {
+        return false;
+    }
 
 
     avformat_alloc_output_context2(&this->_nativePointers->formatCtx, nullptr, nullptr, this->_nativePointers->fileName.c_str());
@@ -93,7 +121,8 @@ bool Recorder16::Initialize()
     }
 
 
-    ret = avformat_write_header(this->_nativePointers->formatCtx, &av_dict_opts);
+    //ret = avformat_write_header(this->_nativePointers->formatCtx, &av_dict_opts);
+    ret = avformat_write_header(this->_nativePointers->formatCtx, nullptr);
     if (ret < 0) {
         std::cout << "avio_open2 fail " << ret << std::endl;
         return -1;
@@ -105,6 +134,82 @@ bool Recorder16::Initialize()
     return true; 
 }
 
+array<byte>^ Recorder16::WriteAndReturnFrame(array<UInt16>^ frameData)
+{
+    AVPacket* packet = av_packet_alloc();
+    packet->data = nullptr;
+    packet->size = 0;
+
+    pin_ptr<unsigned short> frameDataPtr = &frameData[0];
+
+    int inLinesize[1] = { 2 * _width };
+    const uint8_t* ptr = (uint8_t*)frameDataPtr;
+    int ret = sws_scale(this->_nativePointers->swsContext, (const uint8_t* const*)&ptr, inLinesize, 0,
+        _height, this->_nativePointers->avFrame->data, this->_nativePointers->avFrame->linesize);
+
+    this->_nativePointers->avFrame->pts = (10.0 / 75.0) * 90000 * (_frameCounter); // i think there's a bug here
+
+    for (;;)
+    {
+        ret = ::avcodec_send_frame(this->_nativePointers->codecCtx, this->_nativePointers->avFrame);
+        if (ret < 0)
+        {
+            return nullptr;
+        }
+
+        ret = ::avcodec_receive_packet(this->_nativePointers->codecCtx, packet);
+        if (ret == AVERROR(EAGAIN))
+        {
+            continue;
+        }
+        else if (ret < 0)
+        {
+            return nullptr;
+        }
+        break;
+    }
+
+    ret = avcodec_send_packet(_decoderContext, packet); 
+    if (ret < 0)
+    {
+        char szBuffer[1024]; 
+        av_strerror(ret, szBuffer, sizeof(szBuffer)); 
+        printf("%s\n", szBuffer); 
+        return nullptr; 
+    }
+
+    AVFrame* decodedFrame = av_frame_alloc();
+    ret = avcodec_receive_frame(_decoderContext, decodedFrame);
+
+    ret = avcodec_send_frame(_pngEncoderContext, decodedFrame);
+
+    AVPacket* pngPacket = av_packet_alloc(); 
+    pngPacket->data = nullptr;
+    pngPacket->size = 0;
+    ret = ::avcodec_receive_packet(_pngEncoderContext, pngPacket);
+
+    array<byte>^ returnedBuffer = gcnew array<byte>(pngPacket->size); 
+    for (int c = 0; c < returnedBuffer->Length; c++)
+    {
+        returnedBuffer[c] = pngPacket->data[c]; 
+    }
+
+    ret = av_interleaved_write_frame(this->_nativePointers->formatCtx, packet);
+    if (ret < 0)
+    {
+        return nullptr;
+    }
+
+    if (packet)
+    {
+        av_packet_free(&packet);
+    }
+
+    _frameCounter++;
+
+    return returnedBuffer; 
+}
+
 void Recorder16::WriteFrame(array<UInt16>^ frameData)
 {
     AVPacket* packet = av_packet_alloc();
@@ -113,12 +218,18 @@ void Recorder16::WriteFrame(array<UInt16>^ frameData)
 
     pin_ptr<unsigned short> frameDataPtr = &frameData[0]; 
 
+    // uncomment to see things better. 
+    //for (int c = 0; c < 512 * 512; c++)
+    //{
+    //    frameData[c] = (frameData[c] / ((2^16) * 1.0) * 255); 
+    //}
+
     int inLinesize[1] = { 2 * _width };
     const uint8_t* ptr = (uint8_t*)frameDataPtr;
-    //int ret = sws_scale(this->_nativePointers->swsContext, (const uint8_t* const*)&ptr, inLinesize, 0, 
-    //    _height, this->_nativePointers->avFrame->data, this->_nativePointers->avFrame->linesize);
-    int ret = 0; 
-    CopyMemory(this->_nativePointers->avFrame->data[0], ptr, frameData->Length); 
+    int ret = sws_scale(this->_nativePointers->swsContext, (const uint8_t* const*)&ptr, inLinesize, 0, 
+        _height, this->_nativePointers->avFrame->data, this->_nativePointers->avFrame->linesize);
+    //int ret = 0; 
+    //CopyMemory(this->_nativePointers->avFrame->data[0], ptr, frameData->Length); 
 
     //FILE* file; 
     //fopen_s(&file, "c:/users/brush/desktop/binary.dat", "wb+"); 
@@ -146,7 +257,7 @@ void Recorder16::WriteFrame(array<UInt16>^ frameData)
     //written = fwrite(backFromOriginal, sizeof(uint16_t), 512 * 424, file3);
     //fclose(file3);
 
-    this->_nativePointers->avFrame->pts = (1.0 / 25) * 90000 * (_frameCounter); // i think there's a bug here
+    this->_nativePointers->avFrame->pts = (10.0 / 75.0) * 90000 * (_frameCounter); // i think there's a bug here
 
     for (;;)
     {

@@ -27,10 +27,12 @@ void ColorSpaceConverter::Convert16Bit2YChannelPNG(String^ inputPath, int width,
         if (ret == 0)
         {
             ret = avcodec_open2(context, decoder, nullptr);
+            
             if (ret == 0)
             {
                 AVFrame* decodedFrame = av_frame_alloc();
                 AVPacket packetToDecode;
+                av_init_packet(&packetToDecode);
                 packetToDecode.data = NULL;
                 packetToDecode.size = 0;
 
@@ -70,13 +72,13 @@ void ColorSpaceConverter::Convert16Bit2YChannelPNG(String^ inputPath, int width,
                                 ret = avcodec_receive_frame(context, decodedFrame);
                                 if (ret == 0)
                                 {
-                                    ret = sws_scale(png2YUV, decodedFrame->data, decodedFrame->linesize, 0,
+                                    int scaleRet = sws_scale(png2YUV, decodedFrame->data, decodedFrame->linesize, 0,
                                         height, yuvFrame->data, yuvFrame->linesize);
-                                    if (ret == height)
+                                    if (scaleRet == height)
                                     {
-                                        ret = sws_scale(yuv2PNG, yuvFrame->data, yuvFrame->linesize, 0,
+                                        scaleRet = sws_scale(yuv2PNG, yuvFrame->data, yuvFrame->linesize, 0,
                                             height, grayFrame->data, grayFrame->linesize);
-                                        if (ret == height)
+                                        if (scaleRet == height)
                                         {
                                             const AVCodec* outCodec = avcodec_find_encoder(AVCodecID::AV_CODEC_ID_PNG);
                                             AVCodecContext* outCodecCtx = avcodec_alloc_context3(outCodec);
@@ -120,9 +122,19 @@ void ColorSpaceConverter::Convert16Bit2YChannelPNG(String^ inputPath, int width,
                                                 avcodec_free_context(&outCodecCtx);
                                             }
                                         }
+                                        else
+                                        {
+                                            printf("Invalid scale ret.");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        printf("Invalid scale ret."); 
                                     }
                                 }
                             }
+
+                            av_packet_unref(&packetToDecode);
                         }
                     }
 
@@ -147,6 +159,15 @@ void ColorSpaceConverter::Convert16Bit2YChannelPNG(String^ inputPath, int width,
                 {
                     av_frame_free(&yuvFrame); 
                 }
+                if (png2YUV)
+                {
+                    sws_freeContext(png2YUV); 
+                }
+                if (yuv2PNG)
+                {
+                    sws_freeContext(yuv2PNG); 
+                }
+                avcodec_close(context);
             }
         }
 
@@ -158,7 +179,13 @@ void ColorSpaceConverter::Convert16Bit2YChannelPNG(String^ inputPath, int width,
 
     if (formatContext)
     {
-        avformat_free_context(formatContext);
+        avformat_close_input(&formatContext);
+    }
+
+    if (ret != 0)
+    {
+        char szBuffer[1024]; 
+        av_strerror(ret, szBuffer, sizeof(szBuffer)); 
     }
 }
 

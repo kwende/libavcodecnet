@@ -55,7 +55,10 @@
                         }
                     }
 
-                    recorder.WriteFrame(frameBuffer);
+                    //recorder.WriteFrame(frameBuffer);
+                    byte[] pngBuffer = recorder.WriteAndReturnFrame(frameBuffer);
+
+                    File.WriteAllBytes("C:/users/brush/desktop/fartturd.png", pngBuffer);
                     Console.Write(".");
                 }
             }
@@ -64,18 +67,27 @@
         static void Main(string[] args)
         {
             //https://stackoverflow.com/questions/66155414/convert-16bit-grayscale-png-to-hevc-x265
-            //Recorder2();
+            Recorder2();
 
-            foreach (string file in Directory.GetFiles(@"C:\Users\brush\Desktop\png test"))
-            {
-                ColorSpaceConverter converter = new ColorSpaceConverter();
+            //string[] files = Directory.GetFiles(@"E:\2023_01_24_tray_V4_VOC\VOC2007\JPEGImages");
+            //for (int c = 0; c < files.Length; c++)
+            //{
+            //    string file = files[c];
 
-                string destinationName = Path.Combine(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file) + "_converted.png");
+            //    if (c % 100 == 0)
+            //    {
+            //        Console.Clear();
+            //        Console.WriteLine($"{c}/{files.Length}");
+            //    }
 
-                converter.Convert16Bit2YChannelPNG(@"C:\Users\brush\Desktop\png test\0000001-6a9a80d9-53df-44eb-a751-d9241c14dcb2-1.png",
-                    512, 512,
-                    destinationName);
-            }
+            //    ColorSpaceConverter converter = new ColorSpaceConverter();
+
+            //    string destinationName = Path.Combine(@"E:\2023_01_24_tray_V4_VOC\VOC2007\JPEGImages2", Path.GetFileName(file));
+
+            //    converter.Convert16Bit2YChannelPNG(file,
+            //        512, 512,
+            //        destinationName);
+            //}
 
             //ColorSpaceConverter cs = new ColorSpaceConverter();
 
