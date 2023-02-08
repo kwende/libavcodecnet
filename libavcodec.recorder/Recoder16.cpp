@@ -46,6 +46,8 @@ bool Recorder16::InitializeDecoder()
 
     ret = avcodec_open2(_pngEncoderContext, _pngEncoder, nullptr); 
 
+    _yuv2PngColorConverter = sws_getContext(_width, _height, DestFormat, _width, _height, AVPixelFormat::AV_PIX_FMT_GRAY16BE, SWS_BICUBIC, nullptr, nullptr, nullptr);
+
     return false; 
 }
 
@@ -181,7 +183,21 @@ array<byte>^ Recorder16::WriteAndReturnFrame(array<UInt16>^ frameData)
     AVFrame* decodedFrame = av_frame_alloc();
     ret = avcodec_receive_frame(_decoderContext, decodedFrame);
 
-    ret = avcodec_send_frame(_pngEncoderContext, decodedFrame);
+    int pngBufSize = av_image_get_buffer_size(AV_PIX_FMT_GRAY16BE, _width, _height, 1);
+    auto* pngBuf = (uint8_t*)av_malloc(pngBufSize);
+
+    AVFrame* pngFrame = av_frame_alloc();
+    pngFrame->height = _height;
+    pngFrame->width = _width;
+    pngFrame->format = AV_PIX_FMT_GRAY16BE;
+
+    ret = av_image_fill_arrays(pngFrame->data,
+        pngFrame->linesize, pngBuf, AV_PIX_FMT_GRAY16BE, _width, _height, 1);
+
+    ret = sws_scale(_yuv2PngColorConverter, decodedFrame->data, decodedFrame->linesize, 0,
+        _height, pngFrame->data, pngFrame->linesize);
+
+    ret = avcodec_send_frame(_pngEncoderContext, pngFrame);
 
     AVPacket* pngPacket = av_packet_alloc(); 
     pngPacket->data = nullptr;
@@ -203,6 +219,21 @@ array<byte>^ Recorder16::WriteAndReturnFrame(array<UInt16>^ frameData)
     if (packet)
     {
         av_packet_free(&packet);
+    }
+
+    if (decodedFrame)
+    {
+        av_frame_free(&decodedFrame); 
+    }
+
+    if (pngPacket)
+    {
+        av_packet_free(&pngPacket); 
+    }
+
+    if (pngFrame)
+    {
+        av_frame_free(&pngFrame); 
     }
 
     _frameCounter++;

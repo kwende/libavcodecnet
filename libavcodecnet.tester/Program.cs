@@ -51,23 +51,32 @@
                     {
                         for (int x = 0; x < Height; x++, i++)
                         {
-                            frameBuffer[i] = (ushort)(y * x + c * 7000);
+                            frameBuffer[i] = 40000; // (ushort)(y * x + c * 7000);
                         }
                     }
 
                     //recorder.WriteFrame(frameBuffer);
                     byte[] pngBuffer = recorder.WriteAndReturnFrame(frameBuffer);
 
-                    File.WriteAllBytes("C:/users/brush/desktop/fartturd.png", pngBuffer);
+                    //File.WriteAllBytes("C:/users/brush/desktop/fartturd.png", pngBuffer);
                     Console.Write(".");
                 }
             }
         }
 
+        static void Recorder3()
+        {
+            const string inputPath = @"E:\2023_01_24_tray_V4_VOC\JPEGImages_orig\0000001-6a9a80d9-53df-44eb-a751-d9241c14dcb2-1.png";
+            const string outputPath = "C:/users/brush/desktop/changedpoop.png";
+            ColorSpaceConverter converter = new ColorSpaceConverter();
+            converter.InitializeH265Encoder(512, 512, 17);
+            converter.Convert16Bit2H265PNG(inputPath, 512, 512, outputPath);
+        }
+
         static void Main(string[] args)
         {
             //https://stackoverflow.com/questions/66155414/convert-16bit-grayscale-png-to-hevc-x265
-            Recorder2();
+            Recorder3();
 
             //string[] files = Directory.GetFiles(@"E:\2023_01_24_tray_V4_VOC\VOC2007\JPEGImages");
             //for (int c = 0; c < files.Length; c++)

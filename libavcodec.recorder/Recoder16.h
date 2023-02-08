@@ -61,7 +61,8 @@ namespace libavcodecnet {
 		AVCodecContext* _decoderContext; 
 
 		const AVCodec* _pngEncoder; 
-		AVCodecContext* _pngEncoderContext; 
+		AVCodecContext* _pngEncoderContext;
+		SwsContext* _yuv2PngColorConverter; 
 	};
 }
 
