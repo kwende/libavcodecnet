@@ -30,6 +30,12 @@
     <ClInclude Include="ColorSpaceConverter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="YUVDepthConverter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="h265Converter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="libavcodec.recorder.cpp">
@@ -45,6 +51,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ColorSpaceConverter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="YUVDepthConverter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="h265Converter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

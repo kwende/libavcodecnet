@@ -68,15 +68,46 @@
         {
             const string inputPath = @"E:\2023_01_24_tray_V4_VOC\JPEGImages_orig\0000001-6a9a80d9-53df-44eb-a751-d9241c14dcb2-1.png";
             const string outputPath = "C:/users/brush/desktop/changedpoop.png";
-            ColorSpaceConverter converter = new ColorSpaceConverter();
-            converter.InitializeH265Encoder(512, 512, 17);
-            converter.Convert16Bit2H265PNG(inputPath, 512, 512, outputPath);
+
         }
 
         static void Main(string[] args)
         {
+            //h265Converter converter = new h265Converter();
+            //converter.Initialize(512, 512, 17);
+
+            //ushort[] frameBuffer = new ushort[512 * 512];
+            //for (int c = 0; ; c++)
+            //{
+            //    converter.EncodeAndDecodeDepth(frameBuffer);
+            //}
+
+
+            ColorSpaceConverter converter = new ColorSpaceConverter();
+
+            string[] files = Directory.GetFiles(@"E:\2023_01_24_tray_V4_VOC\VOC2007\JPEGImages");
+
+            DateTimeOffset start = DateTimeOffset.Now;
+            TimeSpan elapsedTime = TimeSpan.MinValue;
+            for (int c = 0; c < files.Length; c++)
+            {
+
+                string file = files[c];
+                if (c % 10 == 0 && elapsedTime > TimeSpan.MinValue)
+                {
+                    Console.Clear();
+                    double filesPerSecond = elapsedTime.TotalSeconds / (c * 1.0 + 1);
+                    int filesLeft = files.Length - c + 1;
+                    double secondsLeft = filesPerSecond * filesLeft;
+                    Console.WriteLine($"{c}/{files.Length}, should be done at {DateTimeOffset.Now.AddSeconds(secondsLeft)}");
+                }
+                string destination = Path.Combine(@"E:\2023_01_24_tray_V4_VOC\VOC2007_h265_17\JPEGImages", Path.GetFileName(file));
+                converter.Convert16Bit2H265PNG(file, 512, 512, 17, destination);
+                elapsedTime = DateTimeOffset.Now - start;
+            }
+
             //https://stackoverflow.com/questions/66155414/convert-16bit-grayscale-png-to-hevc-x265
-            Recorder3();
+            //Recorder3();
 
             //string[] files = Directory.GetFiles(@"E:\2023_01_24_tray_V4_VOC\VOC2007\JPEGImages");
             //for (int c = 0; c < files.Length; c++)

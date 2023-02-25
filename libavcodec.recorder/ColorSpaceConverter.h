@@ -31,14 +31,9 @@ namespace libavcodecnet {
 		ColorSpaceConverter();
 		void Save16BitYChannelPNG(array<UInt16>^ frameData, int width, int height, String^ destinationPath);
 		void Convert16Bit2YChannelPNG(String^ inputPath, int width, int height, String^ destinationPath);
-		void Convert16Bit2H265PNG(String^ inputPath, int width, int height, String^ destinationPath);
-		bool InitializeH265Encoder(int width, int height, int crf);
+		void Convert16Bit2H265PNG(String^ inputPath, int width, int height, int crf, String^ destinationPath);
+		array<UInt16>^ Convert16Bit2H265PNG(array<UInt16>^ frameData, int width, int height, int crf);
 	private:
-		AVCodecContext* _h265EncoderContext, * _h265DecoderContext; 
-		//NativePointers* _nativePointers; 
-		AVFrame* _avFrame; 
-		uint8_t* _avBuffer; 
-		const AVCodec* _h265EncoderCodec, * _h265DecoderCodec; 
 	};
 }
 
